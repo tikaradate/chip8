@@ -1,21 +1,23 @@
+use std::fs;
 
-struct chip8{
-    opcode: u16;
-    memory: [u8, 4096];
-    reg: [u8, 16];
-    pc: u16;
-    I: u16;
-    delay_timer: u8;
-    sound_timer: u8;
-    stack: [u16, 16];
-    sp: u16;
+
+pub struct Chip8{
+    opcode: usize,
+    memory: [usize; 4096],
+    reg: [usize; 16],
+    pc: usize,
+    I: usize,
+    delay_timer: usize,
+    sound_timer: usize,
+    stack: [usize; 16],
+    sp: usize,
 }
 
-impl chip8{
+impl Chip8{
     //fonts are loaded starting at this address
     const FONT_ADDR: usize = 0x50;
     //the pc starts at this address
-    const STRT_ADDR: usize = 0x200;
+    const START_ADDR: usize = 0x200;
     const FONT: [usize; 80] = [
         	0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
         	0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -37,33 +39,40 @@ impl chip8{
     fn init() -> Self{
         
         //set all memory to 0's
-        let memory = [0; 4096];
-        let Self{
-        //TODO: arrange like the struct
-            pc = chip8::FONT_ADDR,
-            stack = [0; 16],
-            opcode = 0,
-            I = 0,
-            sp = 0,
-            memory = Self.load_font(),
-            reg = [0; 16],
-            delay_timer = 0,
-            sound_timer = 0
+        let mut memory = [0; 4096];
+        let mut k = 0; 
+        for i in Chip8::FONT.iter(){
+            memory[Chip8::FONT_ADDR + k] = *i;
+            k += 1;
+        }
+        Self{
+        //TODO: arrange it like the struct
+            pc: Chip8::START_ADDR,
+            stack: [0; 16],
+            opcode: 0,
+            I: 0,
+            sp: 0,
+            memory,
+            reg: [0; 16],
+            delay_timer: 0,
+            sound_timer: 0,
         }
     }
 
     fn load_font(&mut self){
-        for i in chip8::FONT.len(){
-            self.memory[i+chip8::FONT_ADDR] = chip::FONT[i];
+        for i in 0..Chip8::FONT.len(){
+            self.memory[i+Chip8::FONT_ADDR] = Chip8::FONT[i];
         }
         
     }
 
     fn load_rom(&mut self, path: &str){
-        //TODO: how to read files
-        for i in rom.len(){
-            self.memory[i+chip8::START_ADDR] = rom[i];
+        let rom = fs::read(path)
+                    .expect("Unable to read file");
+
+        for i in 0..rom.len(){
+            self.memory[i+Chip8::START_ADDR] = rom[i].into();
         }
     }
 
-
+}
