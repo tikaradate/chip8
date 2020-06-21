@@ -75,4 +75,56 @@ impl Chip8{
         }
     }
 
+    fn get_opcode(&mut self){
+        let high = self.memory[self.pc];
+        let low = self.memory[self.pc + 1];
+        self.opcode = (high << 8) | low;
+    }
+
+    fn decode_opcode(&mut self){
+        let cod1 = (opcode & 0xF000) >> 12;
+        let cod2 = (opcode & 0x0F00) >> 8;
+        let cod3 = (opcode & 0x00F0) >> 4;
+        let cod4 = (opcode & 0x000F);
+
+
+        match(cod1, cod2, cod3, cod4){
+            (0, 0, 0xE, 0) => self.clear_scr(),
+            (0, 0, 0xE, 0xE) => self.ret_from_sub(),
+            (1, _, _, _) => self.goto(),
+            (2, _, _, _) => self.call(),
+            (3, _, _, _) => self.eq_const(),
+            (4, _, _, _) => self.n_eq_const(),
+            (5, _, _, 0) => self.eq_regs(),
+            (6, _, _, _) => self.assign_const(),
+            (7, _, _, _) => self.adds_const(),
+            (8, _, _, 0) => self.assign_reg(),
+            (8, _, _, 1) => self.or_op(),
+            (8, _, _, 2) => self.and_op(),
+            (8, _, _, 3) => self.xor_op(),
+            (8, _, _, 4) => self.adds_reg(),
+            (8, _, _, 5) => self.subs_reg(),
+            (8, _, _, 6) => self.shift_r1(),
+            (8, _, _, 7) => self.sub_reg(),
+            (8, _, _, 0xE) => self.shif_l1(),
+            (9, _, _, 0) => self.is_nequal(),
+            (0xA, _, _, _) => self.set_I(),
+            (0xB, _, _, _) => self.jump_v0(),
+            (0xC, _, _, _) => self.rand(),
+            (0xD, _, _, _) => self.draw(),
+            (0xE, _, 9, 0xE) => self.key_equal(),
+            (0xE, _, 0xA, 1) => self.key_nequal(),
+            (0xF, _, 0, 7) => self.get_delay(),
+            (0xF, _, 0, 0xA) => self.get_key(),
+            (0xF, _, 1, 5) => self.set_delay(),
+            (0xF, _, 1, 8) => self.set_sound(),
+            (0xF, _, 1, 0xE) => self.add_const_I(),
+            (0xF, _, 2, 9) => self.set_I_sprite(),
+            (0xF, _, 3, 3) => self.set_BCD(),
+            (0xF, _, 5, 5) => self.store_regs_mem(),
+            (0xF, _, 6, 5) => self.load_regs_mem(),
+            (_, _, _, _,) => panic!("opcode {:?} not found", self.opcode),
+        };
+
+    }
 }
