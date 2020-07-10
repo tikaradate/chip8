@@ -85,46 +85,74 @@ impl Chip8{
         let cod1 = (opcode & 0xF000) >> 12;
         let cod2 = (opcode & 0x0F00) >> 8;
         let cod3 = (opcode & 0x00F0) >> 4;
-        let cod4 = (opcode & 0x000F);
-
+        let cod4 = opcode & 0x000F;
+        let nnn = opcode & 0x0FFF;
+        let nn = opcode & 0x00FF;
+        let vx = cod2;
+        let vy = cod2;
 
         match(cod1, cod2, cod3, cod4){
             (0, 0, 0xE, 0) => self.clear_scr(),
             (0, 0, 0xE, 0xE) => self.ret_from_sub(),
-            (1, _, _, _) => self.goto(),
-            (2, _, _, _) => self.call(),
-            (3, _, _, _) => self.ieq_const(),
-            (4, _, _, _) => self.neq_const(),
-            (5, _, _, 0) => self.ieq(),
-            (6, _, _, _) => self.set_vx_const(),
-            (7, _, _, _) => self.adds_const(),
-            (8, _, _, 0) => self.set_vx_vy(),
-            (8, _, _, 1) => self.set_or_vxvy(),
-            (8, _, _, 2) => self.set_and_vxvy(),
-            (8, _, _, 3) => self.set_xor_vxvy(),
-            (8, _, _, 4) => self.adds_vy(),
-            (8, _, _, 5) => self.subs_vy(),
-            (8, _, _, 6) => self.shift_r1(),
-            (8, _, _, 7) => self.subs_vxvy(),
-            (8, _, _, 0xE) => self.shif_l1(),
-            (9, _, _, 0) => self.neq(),
-            (0xA, _, _, _) => self.set_I(),
-            (0xB, _, _, _) => self.jump_v0(),
-            (0xC, _, _, _) => self.rand(),
-            (0xD, _, _, _) => self.draw(),
-            (0xE, _, 9, 0xE) => self.ieq_key(),
-            (0xE, _, 0xA, 1) => self.neq_key(),
-            (0xF, _, 0, 7) => self.get_delay(),
-            (0xF, _, 0, 0xA) => self.get_key(),
-            (0xF, _, 1, 5) => self.set_delay(),
-            (0xF, _, 1, 8) => self.set_sound(),
-            (0xF, _, 1, 0xE) => self.add_I_vx(),
-            (0xF, _, 2, 9) => self.set_I_sprite(),
-            (0xF, _, 3, 3) => self.set_BCD(),
-            (0xF, _, 5, 5) => self.store_regs_mem(),
-            (0xF, _, 6, 5) => self.load_regs_mem(),
+            (1, _, _, _) => self.goto(nnn),
+            (2, _, _, _) => self.call(nnn),
+            (3, _, _, _) => self.ieq_const(vx, nn),
+            (4, _, _, _) => self.neq_const(vx, nn),
+            (5, _, _, 0) => self.ieq(vx, vy),
+            (6, _, _, _) => self.set_vx_const(vx ,nn),
+            (7, _, _, _) => self.adds_const(vx, nn),
+            (8, _, _, 0) => self.set_vx_vy(vx, vy),
+            (8, _, _, 1) => self.set_or_vxvy(vx, vy),
+            (8, _, _, 2) => self.set_and_vxvy(vx, vy),
+            (8, _, _, 3) => self.set_xor_vxvy(vx, vy),
+            (8, _, _, 4) => self.adds_vy(vx, vy),
+            (8, _, _, 5) => self.subs_vy(vx, vy),
+            (8, _, _, 6) => self.shift_r1(vx, vy),
+            (8, _, _, 7) => self.subs_vxvy(vx, vy),
+            (8, _, _, 0xE) => self.shif_l1(vx, vy),
+            (9, _, _, 0) => self.neq(vx, vy),
+            (0xA, _, _, _) => self.set_I(nnn),
+            (0xB, _, _, _) => self.jump_v0(nnn),
+            (0xC, _, _, _) => self.rand(vx, nn),
+            (0xD, _, _, _) => self.draw(vx, vy, n),
+            (0xE, _, 9, 0xE) => self.ieq_key(vx),
+            (0xE, _, 0xA, 1) => self.neq_key(vx),
+            (0xF, _, 0, 7) => self.get_delay(vx),
+            (0xF, _, 0, 0xA) => self.get_key(vx),
+            (0xF, _, 1, 5) => self.set_delay(vx),
+            (0xF, _, 1, 8) => self.set_sound(vx),
+            (0xF, _, 1, 0xE) => self.add_I_vx(vx),
+            (0xF, _, 2, 9) => self.set_I_sprite(vx),
+            (0xF, _, 3, 3) => self.set_BCD(vx),
+            (0xF, _, 5, 5) => self.store_regs_mem(vx),
+            (0xF, _, 6, 5) => self.load_regs_mem(vx),
             (_, _, _, _,) => panic!("opcode {:?} not found", self.opcode),
         };
 
+    }
+
+    fn clear_scr(&mut self){
+        
+    }
+
+    fn ret_from_sub(&mut self){
+        self.sp -= 1;
+        self.pc = self.stack[self.sp];
+    }
+
+    fn goto(&mut self, nnn:usize){
+        self.pc = nnn;
+    }
+
+    fn call(&mut self, nnn:usize){
+        self.stack[self.sp] = self.pc;
+        self.sp += 1;
+        self.pc = nnn;
+    }
+
+    fn ieq_const(&mut self, vx:usize, nn:usize){
+        if self.reg[vx] == nn{
+            self.pc += self.OPCODE_SIZE;
+        }
     }
 }
