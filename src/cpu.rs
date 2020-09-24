@@ -1,3 +1,5 @@
+extern crate rand;
+use rand::Rng;
 use std::fs;
 
 pub struct Chip8 {
@@ -10,6 +12,8 @@ pub struct Chip8 {
     sound_timer: usize,
     stack: [usize; 16],
     sp: usize,
+    key: [bool; 16],
+    gfx: [bool; 64*32],
 }
 
 impl Chip8 {
@@ -59,6 +63,8 @@ impl Chip8 {
             sound_timer: 0,
             stack: [0; 16],
             sp: 0,
+            key: [false; 16],
+            gfx: [false; 64*32],
         }
     }
     // loads the font starting from a defined offset
@@ -89,6 +95,7 @@ impl Chip8 {
         let cod4 = opcode & 0x000F;
         let nnn = opcode & 0x0FFF;
         let nn = opcode & 0x00FF;
+        let n = opcode & 0x000F;
         let vx = cod2;
         let vy = cod2;
 
@@ -114,7 +121,7 @@ impl Chip8 {
             (9, _, _, 0) => self.neq(vx, vy),
             (0xA, _, _, _) => self.set_I(nnn),
             (0xB, _, _, _) => self.jump_v0(nnn),
-            (0xC, _, _, _) => self.rand(vx, nn),
+            (0xC, _, _, _) => self.random(vx, nn),
             (0xD, _, _, _) => self.draw(vx, vy, n),
             (0xE, _, 9, 0xE) => self.ieq_key(vx),
             (0xE, _, 0xA, 1) => self.neq_key(vx),
@@ -202,16 +209,16 @@ impl Chip8 {
     // set VX to VY subtracted from VX and, if needed,
     // setting VF to the borrow flag
     fn subs_vx_vy(&mut self, vx: usize, vy: usize) {
-        if self.reg[vx] > self.reg[vy]  {
+        if self.reg[vx] > self.reg[vy] {
             self.reg[0xF] = 1;
         } else {
             self.reg[0xF] = 0;
         }
         self.reg[vx] = self.reg[vx] - self.reg[vy];
     }
-    // stores the least significant bit of VX in VF and 
+    // stores the least significant bit of VX in VF and
     // then shifts VX to the right by 1
-    fn shift_r1(&mut self, vx: usize){
+    fn shift_r1(&mut self, vx: usize) {
         // bitmask to get the least sig. bit
         self.reg[0xF] = self.reg[vx] & 0x1;
         self.reg[vx] = self.reg[vx] >> 1;
@@ -219,19 +226,106 @@ impl Chip8 {
     // set VX to VX subtracted from VY and, if needed,
     // setting VF to the borrow flag
     fn subs_vy_vx(&mut self, vx: usize, vy: usize) {
-        if self.reg[vy] > self.reg[vx]  {
+        if self.reg[vy] > self.reg[vx] {
             self.reg[0xF] = 1;
         } else {
             self.reg[0xF] = 0;
         }
         self.reg[vx] = self.reg[vy] - self.reg[vx];
     }
-    // stores the most significant bit of VX in VF and 
+    // stores the most significant bit of VX in VF and
     // then shifts VX to the left by 1
-    fn shift_l1(&mut self, vx: usize){
-        // bitmask to get the most sig. bit 
+    fn shift_l1(&mut self, vx: usize) {
+        // bitmask to get the most sig. bit
         // then pushing it to the end
         self.reg[0xF] = (self.reg[vx] & 0x8) >> 7;
         self.reg[vx] = self.reg[vx] << 1;
+    }
+    // if VX is not equal to VY, skip the next instruction
+    fn neq(&mut self, vx: usize, vy: usize) {
+        if self.reg[vx] != self.reg[vy] {
+            self.pc += Chip8::OPCODE_SIZE;
+        }
+    }
+    // set I to the adress NNN
+    fn set_I(&mut self, nnn: usize) {
+        self.I = nnn;
+    }
+    // sets pc to V0 + NNN
+    fn jump_v0(&mut self, nnn: usize) {
+        self.pc = self.reg[0] + nnn;
+    }
+    // sets VX to rand() bitwise-and NNN
+    fn random(&mut self, vx: usize, nn: usize) {
+        let mut rng = rand::thread_rng();
+        self.reg[vx] = rng.gen_range(0x00, 0xFE) & nn;
+    }
+    // draw a sprite at the coordinates VX, VY, with
+    // the data starting at I
+    fn draw(&mut self, vx: usize, vy: usize, n: usize) {
+
+    }
+    // if VX is equal to the key, skip the next instruction
+    fn ieq_key(&mut self, vx: usize) {
+        if self.key[self.reg[vx]] == true {
+            self.pc += Chip8::OPCODE_SIZE;
+        }
+    }
+    // if VX is not equal to the key, skip the next instruction
+    fn neq_key(&mut self, vx: usize) {
+        if self.key[self.reg[vx]] == false {
+            self.pc += Chip8::OPCODE_SIZE;
+        }
+    }
+    // set the vx to the delay timer
+    fn get_delay(&mut self, vx: usize) {
+        self.reg[vx] = self.delay_timer;
+    }
+    // waits for a key to get pressed
+    fn get_key(&mut self, vx: usize) {
+        let mut pressed = false;
+        while !pressed {
+            for i in 0..self.key.len() {
+                if self.key[i] {
+                    pressed = true;
+                    break;
+                }
+            }
+        }
+    }
+    // set the delay timer to the value of VX
+    fn set_delay(&mut self, vx: usize) {
+        self.delay_timer = self.reg[vx];
+    }
+    // set the sound timer to the value of VX
+    fn set_sound(&mut self, vx: usize) {
+        self.sound_timer = self.reg[vx];
+    }
+    // sets I to VX added to I
+    fn add_I_vx(&mut self, vx: usize) {
+        self.I += self.reg[vx];
+    }
+    // sets I to the spr_addr added to VX
+    fn set_I_sprite(&mut self, vx: usize) {
+        self.I = Chip8::FONT_ADDR + self.reg[vx] * 5;
+    }
+    // gets the BCD of VX and sets I to the hundreds place,
+    // I + 1 to the tens, and I + 2 to the ones
+    fn set_BCD(&mut self, vx: usize) {    
+        self.memory[self.I] = vx / 100;
+        self.memory[self.I + 1] = (vx % 100) / 10;
+        self.memory[self.I + 2] = vx % 10;
+    }
+    // store the value from all registers starting at the address I
+    fn store_regs_mem(&mut self, vx: usize) {
+        for i in 0..15 {
+            self.memory[self.I + i] = self.reg[i];
+        }
+    }
+    // loads values in all registers starting at the address I
+    fn load_regs_mem(&mut self, vx: usize) {
+        for i in 0..15 {
+            self.reg[i] = self.memory[self.I + i];
+        }
     }
 }
