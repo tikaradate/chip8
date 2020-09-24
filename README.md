@@ -1,1 +1,1 @@
-This project is for learning about Rust, emulating, and some SDL.
+This project has the objective of learning Rust, emulators, albeit a simple one, and some SDL.
