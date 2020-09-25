@@ -13,7 +13,7 @@ pub struct Chip8 {
     stack: [usize; 16],
     sp: usize,
     key: [bool; 16],
-    gfx: [bool; 64*32],
+    gfx: [bool; 64 * 32],
 }
 
 impl Chip8 {
@@ -64,7 +64,7 @@ impl Chip8 {
             stack: [0; 16],
             sp: 0,
             key: [false; 16],
-            gfx: [false; 64*32],
+            gfx: [false; 64 * 32],
         }
     }
     // loads the font starting from a defined offset
@@ -263,7 +263,20 @@ impl Chip8 {
     // draw a sprite at the coordinates VX, VY, with
     // the data starting at I
     fn draw(&mut self, vx: usize, vy: usize, n: usize) {
-
+        // iterates over the height/rows
+        for i in 0..(n - 1) {
+            let pixel = self.memory[self.I + i];
+            // iterates collumn by collumn(fixed size of 8)
+            for j in 0..7 {
+                if (pixel & (0x8 >> j)) != 0 {
+                    if self.gfx[(vx + j +((vy + i) * 64))] == true {
+                        self.reg[0xF] = 1;
+                    }
+                    self.gfx[(vx + j +((vy + i) * 64))] ^= true;
+                }
+            }
+        }
+        self.pc += Chip8::OPCODE_SIZE;
     }
     // if VX is equal to the key, skip the next instruction
     fn ieq_key(&mut self, vx: usize) {
@@ -311,7 +324,7 @@ impl Chip8 {
     }
     // gets the BCD of VX and sets I to the hundreds place,
     // I + 1 to the tens, and I + 2 to the ones
-    fn set_BCD(&mut self, vx: usize) {    
+    fn set_BCD(&mut self, vx: usize) {
         self.memory[self.I] = vx / 100;
         self.memory[self.I + 1] = (vx % 100) / 10;
         self.memory[self.I + 2] = vx % 10;
