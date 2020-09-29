@@ -1,4 +1,7 @@
-extern crate rand;
+use ggez;
+use rand;
+
+use ggez::graphics;
 use rand::Rng;
 use std::fs;
 
@@ -85,6 +88,23 @@ impl Chip8 {
 
         for i in 0..rom.len() {
             self.memory[i + Chip8::START_ADDR] = rom[i].into();
+        }
+    }
+    // for the loop
+    // do it on main drawing in emulator_state, otherwise
+    // it will get messy
+    pub fn draw_to_screen(&self, ctx: &mut Context) -> GameResult<()> {
+        // bg is black and fg is white
+        let background = [0.0, 0.0, 0.0, 0.0].into();
+        let foreground = [1.0, 1.0, 1.0, 1.0].into();
+        let color;
+        for i in 0..(64*32) {
+                if self.gfx[i] == true {
+                    color = foreground;
+                } else {
+                    color = background;
+                }
+                graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), /* get pos somehow */, color)?;
         }
     }
 
@@ -273,10 +293,10 @@ impl Chip8 {
     // the data starting at I
     fn draw(&mut self, vx: usize, vy: usize, n: usize) {
         // iterates over the height/rows
-        for i in 0..(n - 1) {
+        for i in 0..n {
             let pixel = self.memory[self.I + i];
             // iterates collumn by collumn(fixed size of 8)
-            for j in 0..7 {
+            for j in 0..8 {
                 if (pixel & (0x8 >> j)) != 0 {
                     if self.gfx[(vx + j +((vy + i) * 64))] == true {
                         self.reg[0xF] = 1;
@@ -342,13 +362,13 @@ impl Chip8 {
     }
     // store the value from all registers starting at the address I
     fn store_regs_mem(&mut self, vx: usize) {
-        for i in 0..15 {
+        for i in 0..16 {
             self.memory[self.I + i] = self.reg[i];
         }
     }
     // loads values in all registers starting at the address I
     fn load_regs_mem(&mut self, vx: usize) {
-        for i in 0..15 {
+        for i in 0..16 {
             self.reg[i] = self.memory[self.I + i];
         }
     }
