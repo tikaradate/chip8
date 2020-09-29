@@ -14,6 +14,9 @@ pub struct Chip8 {
     sp: usize,
     key: [bool; 16],
     gfx: [bool; 64 * 32],
+    // internal flags
+    update_screen: bool,
+    check_key: bool,
 }
 
 impl Chip8 {
@@ -43,10 +46,11 @@ impl Chip8 {
         0xF0, 0x80, 0xF0, 0x80, 0x80, // F
     ];
 
-    fn init() -> Self {
+    pub fn init() -> Self {
         //set all memory to 0's
         let mut memory = [0; 4096];
 
+        // load the font into memory
         let mut k = 0;
         for i in Chip8::FONT.iter() {
             memory[Chip8::FONT_ADDR + k] = *i;
@@ -65,6 +69,8 @@ impl Chip8 {
             sp: 0,
             key: [false; 16],
             gfx: [false; 64 * 32],
+            update_screen: false,
+            check_key: false,
         }
     }
     // loads the font starting from a defined offset
@@ -73,8 +79,8 @@ impl Chip8 {
             self.memory[i + Chip8::FONT_ADDR] = Chip8::FONT[i];
         }
     }
-    // loads the rom(if possible) starting from a define offset
-    fn load_rom(&mut self, path: &str) {
+    // loads the rom(if possible) starting from a defined offset
+    pub fn load_rom(&mut self, path: &str) {
         let rom = fs::read(path).expect("Unable to read file");
 
         for i in 0..rom.len() {
@@ -138,7 +144,10 @@ impl Chip8 {
         };
     }
 
-    fn clear_scr(&mut self) {}
+    fn clear_scr(&mut self) {
+        self.gfx = [false; 64*32];
+        self.update_screen = true;
+    }
 
     fn ret_from_sub(&mut self) {
         self.sp -= 1;
@@ -277,6 +286,7 @@ impl Chip8 {
             }
         }
         self.pc += Chip8::OPCODE_SIZE;
+        self.update_screen = true;
     }
     // if VX is equal to the key, skip the next instruction
     fn ieq_key(&mut self, vx: usize) {
@@ -301,6 +311,7 @@ impl Chip8 {
             for i in 0..self.key.len() {
                 if self.key[i] {
                     pressed = true;
+                    self.check_key = true;
                     break;
                 }
             }
