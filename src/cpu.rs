@@ -16,7 +16,7 @@ pub struct Chip8 {
     stack: [usize; 16],
     sp: usize,
     key: [bool; 16],
-    gfx: [bool; 64 * 32],
+    pub gfx: [bool; 64 * 32],
     // internal flags
     update_screen: bool,
     check_key: bool,
@@ -88,23 +88,6 @@ impl Chip8 {
 
         for i in 0..rom.len() {
             self.memory[i + Chip8::START_ADDR] = rom[i].into();
-        }
-    }
-    // for the loop
-    // do it on main drawing in emulator_state, otherwise
-    // it will get messy
-    pub fn draw_to_screen(&self, ctx: &mut Context) -> GameResult<()> {
-        // bg is black and fg is white
-        let background = [0.0, 0.0, 0.0, 0.0].into();
-        let foreground = [1.0, 1.0, 1.0, 1.0].into();
-        let color;
-        for i in 0..(64*32) {
-                if self.gfx[i] == true {
-                    color = foreground;
-                } else {
-                    color = background;
-                }
-                graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), /* get pos somehow */, color)?;
         }
     }
 
