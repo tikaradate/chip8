@@ -87,7 +87,6 @@ impl Chip8 {
             self.memory[i + Chip8::START_ADDR] = rom[i].into();
         }
     }
-    
     /*
     pub fn load_rom(&mut self, path: &str) {
         let path = Path::new(path);
@@ -126,7 +125,7 @@ impl Chip8 {
         let nn = opcode & 0x00FF;
         let n = opcode & 0x000F;
         let vx = cod2;
-        let vy = cod2;
+        let vy = cod3;
 
         match (cod1, cod2, cod3, cod4) {
             (0, 0, 0xE, 0) => self.clear_scr(),
@@ -165,10 +164,13 @@ impl Chip8 {
             (0xF, _, 6, 5) => self.load_regs_mem(vx),
             (_, _, _, _) => panic!("opcode {:?} not found", self.opcode),
         };
+        if cod1 != 1 && cod1 != 2 && cod1 != 0xB {
+            self.pc += Chip8::OPCODE_SIZE;
+        }
     }
 
     fn clear_scr(&mut self) {
-        self.gfx = [false; 64*32];
+        self.gfx = [false; 64 * 32];
         self.update_screen = true;
     }
 
@@ -301,10 +303,10 @@ impl Chip8 {
             // iterates collumn by collumn(fixed size of 8)
             for j in 0..8 {
                 if (pixel & (0x8 >> j)) != 0 {
-                    if self.gfx[(vx + j +((vy + i) * 64))] == true {
+                    if self.gfx[(vx + j + ((vy + i) * 64))] == true {
                         self.reg[0xF] = 1;
                     }
-                    self.gfx[(vx + j +((vy + i) * 64))] ^= true;
+                    self.gfx[(vx + j + ((vy + i) * 64))] ^= true;
                 }
             }
         }
@@ -332,7 +334,7 @@ impl Chip8 {
         let mut pressed = false;
         while !pressed {
             for i in 0..self.key.len() {
-                if self.key[i] == true{
+                if self.key[i] == true {
                     pressed = true;
                     self.reg[vx] = i;
                     self.check_key = true;
