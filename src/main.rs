@@ -53,7 +53,7 @@ impl event::EventHandler for Emulator {
         // this equals around 500Hz, although it's not precise
         let milli = Duration::from_millis(12);
         self.chip8.get_opcode();
-        self.chip8.decode_opcode(self.chip8.opcode);
+        self.chip8.decode_opcode();
         //TODO: using the flags in the chip8 struct, pause until the input is received
         thread::sleep(milli);
         Ok(())
@@ -62,13 +62,12 @@ impl event::EventHandler for Emulator {
 fn main() {
     // getting the rom path from cmd
     let path_rom = std::env::args().nth(1).expect("no rom given");
-    let mut emulator = cpu::Chip8::init();
-    emulator.load_rom(&path_rom);
-    emulator.load_font();
 
     let (mut ctx, mut event_loop) = ContextBuilder::new("CHIP-8", "x").build().unwrap();
 
     let emulator = &mut Emulator::new();
+    emulator.chip8.load_rom(&path_rom);
+    emulator.chip8.load_font();
 
     // main loop
     match event::run(&mut ctx, &mut event_loop, emulator) {

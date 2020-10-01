@@ -83,17 +83,41 @@ impl Chip8 {
         let rom = fs::read(path).expect("Unable to read file");
 
         for i in 0..rom.len() {
+            //println!("i + Chip8:START_ADDR:{},rom[{}]:{:x} ",i + Chip8::START_ADDR, i, rom[i] as usize);
             self.memory[i + Chip8::START_ADDR] = rom[i].into();
         }
     }
+    
+    /*
+    pub fn load_rom(&mut self, path: &str) {
+        let path = Path::new(path);
+        let mut file = File::open(&path).expect("File open failed");
+        let mut buf = Vec::new();
+
+        file.read_to_end(&mut buf).expect("Failed to read file");
+
+        if buf.len() >= 3585 {
+            panic!("ROM is too large, size: {}", buf.len());
+        }
+
+        let buf_len = buf.len();
+        for i in 0..buf_len {
+            self.memory[i + 512] = buf[i].into();
+        }
+    }
+    */
+
     // reads the opcode pointed by PC
     pub fn get_opcode(&mut self) {
         let high = self.memory[self.pc];
         let low = self.memory[self.pc + 1];
-        self.opcode = (high << 8) | low;
+        //println!("memory[{}]: {}", self.pc, self.memory[self.pc] );
+        self.opcode = ((high) << 8) | low;
     }
     // decodes the opcode and calls the correct function
-    pub fn decode_opcode(&mut self, opcode: usize) {
+    pub fn decode_opcode(&mut self) {
+        let opcode = self.opcode;
+        println!("opcode: {:x}", opcode);
         let cod1 = (opcode & 0xF000) >> 12;
         let cod2 = (opcode & 0x0F00) >> 8;
         let cod3 = (opcode & 0x00F0) >> 4;
