@@ -1,12 +1,8 @@
-use ggez;
-use rand;
-
-use ggez::graphics;
 use rand::Rng;
 use std::fs;
 
 pub struct Chip8 {
-    opcode: usize,
+    pub opcode: usize,
     memory: [usize; 4096],
     reg: [usize; 16],
     pc: usize,
@@ -77,7 +73,7 @@ impl Chip8 {
         }
     }
     // loads the font starting from a defined offset
-    fn load_font(&mut self) {
+    pub fn load_font(&mut self) {
         for i in 0..Chip8::FONT.len() {
             self.memory[i + Chip8::FONT_ADDR] = Chip8::FONT[i];
         }
@@ -90,14 +86,14 @@ impl Chip8 {
             self.memory[i + Chip8::START_ADDR] = rom[i].into();
         }
     }
-
-    fn get_opcode(&mut self) {
+    // reads the opcode pointed by PC
+    pub fn get_opcode(&mut self) {
         let high = self.memory[self.pc];
         let low = self.memory[self.pc + 1];
         self.opcode = (high << 8) | low;
     }
-
-    fn decode_opcode(&mut self, opcode: usize) {
+    // decodes the opcode and calls the correct function
+    pub fn decode_opcode(&mut self, opcode: usize) {
         let cod1 = (opcode & 0xF000) >> 12;
         let cod2 = (opcode & 0x0F00) >> 8;
         let cod3 = (opcode & 0x00F0) >> 4;
@@ -128,7 +124,7 @@ impl Chip8 {
             (8, _, _, 7) => self.subs_vy_vx(vx, vy),
             (8, _, _, 0xE) => self.shift_l1(vx),
             (9, _, _, 0) => self.neq(vx, vy),
-            (0xA, _, _, _) => self.set_I(nnn),
+            (0xA, _, _, _) => self.set_i(nnn),
             (0xB, _, _, _) => self.jump_v0(nnn),
             (0xC, _, _, _) => self.random(vx, nn),
             (0xD, _, _, _) => self.draw(vx, vy, n),
@@ -138,9 +134,9 @@ impl Chip8 {
             (0xF, _, 0, 0xA) => self.get_key(vx),
             (0xF, _, 1, 5) => self.set_delay(vx),
             (0xF, _, 1, 8) => self.set_sound(vx),
-            (0xF, _, 1, 0xE) => self.add_I_vx(vx),
-            (0xF, _, 2, 9) => self.set_I_sprite(vx),
-            (0xF, _, 3, 3) => self.set_BCD(vx),
+            (0xF, _, 1, 0xE) => self.add_i_vx(vx),
+            (0xF, _, 2, 9) => self.set_i_sprite(vx),
+            (0xF, _, 3, 3) => self.set_bcd(vx),
             (0xF, _, 5, 5) => self.store_regs_mem(vx),
             (0xF, _, 6, 5) => self.load_regs_mem(vx),
             (_, _, _, _) => panic!("opcode {:?} not found", self.opcode),
@@ -260,7 +256,7 @@ impl Chip8 {
         }
     }
     // set I to the adress NNN
-    fn set_I(&mut self, nnn: usize) {
+    fn set_i(&mut self, nnn: usize) {
         self.I = nnn;
     }
     // sets pc to V0 + NNN
@@ -312,8 +308,9 @@ impl Chip8 {
         let mut pressed = false;
         while !pressed {
             for i in 0..self.key.len() {
-                if self.key[i] {
+                if self.key[i] == true{
                     pressed = true;
+                    self.reg[vx] = i;
                     self.check_key = true;
                     break;
                 }
@@ -329,16 +326,16 @@ impl Chip8 {
         self.sound_timer = self.reg[vx];
     }
     // sets I to VX added to I
-    fn add_I_vx(&mut self, vx: usize) {
+    fn add_i_vx(&mut self, vx: usize) {
         self.I += self.reg[vx];
     }
     // sets I to the spr_addr added to VX
-    fn set_I_sprite(&mut self, vx: usize) {
+    fn set_i_sprite(&mut self, vx: usize) {
         self.I = Chip8::FONT_ADDR + self.reg[vx] * 5;
     }
     // gets the BCD of VX and sets I to the hundreds place,
     // I + 1 to the tens, and I + 2 to the ones
-    fn set_BCD(&mut self, vx: usize) {
+    fn set_bcd(&mut self, vx: usize) {
         self.memory[self.I] = vx / 100;
         self.memory[self.I + 1] = (vx % 100) / 10;
         self.memory[self.I + 2] = vx % 10;
@@ -346,13 +343,13 @@ impl Chip8 {
     // store the value from all registers starting at the address I
     fn store_regs_mem(&mut self, vx: usize) {
         for i in 0..16 {
-            self.memory[self.I + i] = self.reg[i];
+            self.memory[self.I + i] = self.reg[vx + i];
         }
     }
     // loads values in all registers starting at the address I
     fn load_regs_mem(&mut self, vx: usize) {
         for i in 0..16 {
-            self.reg[i] = self.memory[self.I + i];
+            self.reg[vx + i] = self.memory[self.I + i];
         }
     }
 }

@@ -1,53 +1,77 @@
 use ::ggez::*;
+use std::time::{Duration};
+use std::thread;
 
 mod cpu;
-mod inputs;
+mod input;
 
-struct emulator {
+const ZOOM: u32 = 10;
+const HEIGHT: u32 = 64;
+const WIDTH: u32 = 32;
+
+struct Emulator {
     chip8: cpu::Chip8,
-    keys: inputs::keys,
 }
-impl emulator {
+impl Emulator {
+    pub fn new() -> Self {
+        Emulator {
+            chip8: cpu::Chip8::init(),
+        }
+    }
+}
+impl event::EventHandler for Emulator {
     // for the loop
     // do it on main drawing in emulator_state, otherwise
     // it will get messy
-    pub fn draw(chip8: &cpu::Chip8, ctx: &mut Context) -> GameResult<()> {
+    fn draw(&mut self, ctx: &mut Context) -> GameResult {
+        graphics::clear(ctx, [0.0, 0.0, 0.0, 1.0].into());
+
         // bg is black and fg is white
         let mesh = &mut graphics::MeshBuilder::new();
-        let background: graphics::Color = [0.0, 0.0, 0.0, 0.0].into();
+        // maybe redundant??
+        let background: graphics::Color = [0.0, 0.0, 0.0, 1.0].into();
         let foreground: graphics::Color = [1.0, 1.0, 1.0, 1.0].into();
-        let color;
-        for i in 0..64 {
-            for j in 0..32 {
-                if chip8.gfx[i] == true {
+        let mut color;
+        for i in 0..HEIGHT as usize {
+            for j in 0..WIDTH as usize {
+                if self.chip8.gfx[i*32 + j] == true {
                     color = foreground;
                 } else {
                     color = background;
                 }
-                let rect = graphics::Rect::new(i as f32,j as f32, 1.0, 1.2);
-                let mesh_rect = graphics::MeshBuilder::rectangle(mesh, graphics::DrawMode::fill(), rect, color);
+                let rect = graphics::Rect::new(i as f32, j as f32, ZOOM as f32, ZOOM as f32);
+                let mesh_rect =
+                    graphics::MeshBuilder::rectangle(mesh, graphics::DrawMode::fill(), rect, color);
             }
         }
+
+        graphics::present(ctx)?;
+        ggez::timer::yield_now();
+        Ok(())
+    }
+    fn update(&mut self, _ctx: &mut Context) -> GameResult {
+        // this equals around 500Hz, although it's not precise
+        let milli = Duration::from_millis(12);
+        self.chip8.get_opcode();
+        self.chip8.decode_opcode(self.chip8.opcode);
+        //TODO: using the flags in the chip8 struct, pause until the input is received
+        thread::sleep(milli);
         Ok(())
     }
 }
 fn main() {
+    // getting the rom path from cmd
     let path_rom = std::env::args().nth(1).expect("no rom given");
     let mut emulator = cpu::Chip8::init();
     emulator.load_rom(&path_rom);
-
-    // both width and height are multiplied by a constant,
-    // otherwise it would be too small
-    const ZOOM: u32 = 10;
-    let height = ZOOM * 64;
-    let width = ZOOM * 32;
+    emulator.load_font();
 
     let (mut ctx, mut event_loop) = ContextBuilder::new("CHIP-8", "x").build().unwrap();
 
-    let mut my_game = MyGame::new(&mut ctx);
+    let emulator = &mut Emulator::new();
 
     // main loop
-    match event::run(&mut ctx, &mut event_loop, &mut my_game) {
+    match event::run(&mut ctx, &mut event_loop, emulator) {
         Ok(_) => println!("Exited cleanly."),
         Err(e) => println!("Error occured: {}", e),
     }
