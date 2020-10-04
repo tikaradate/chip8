@@ -310,7 +310,6 @@ impl Chip8 {
                 }
             }
         }
-        self.pc += Chip8::OPCODE_SIZE;
         self.update_screen = true;
     }
     // if VX is equal to the key, skip the next instruction
@@ -368,14 +367,14 @@ impl Chip8 {
     }
     // store the value from all registers starting at the address I
     fn store_regs_mem(&mut self, vx: usize) {
-        for i in 0..16 {
-            self.memory[self.I + i] = self.reg[vx + i];
+        for i in 0..vx + 1 {
+            self.memory[self.I + i] = self.reg[i];
         }
     }
     // loads values in all registers starting at the address I
     fn load_regs_mem(&mut self, vx: usize) {
-        for i in 0..16 {
-            self.reg[vx + i] = self.memory[self.I + i];
+        for i in 0..vx + 1 {
+            self.reg[i] = self.memory[self.I + i];
         }
     }
 }

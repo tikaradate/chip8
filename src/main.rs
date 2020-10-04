@@ -25,23 +25,25 @@ impl event::EventHandler for Emulator {
     // it will get messy
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         graphics::clear(ctx, [0.0, 0.0, 0.0, 1.0].into());
-
         // bg is black and fg is white
-        let mesh = &mut graphics::MeshBuilder::new();
         // maybe redundant??
-        let background: graphics::Color = [0.0, 0.0, 0.0, 1.0].into();
-        let foreground: graphics::Color = [1.0, 1.0, 1.0, 1.0].into();
+        let background = graphics::BLACK;
+        let foreground = graphics::WHITE;
         let mut color;
         for i in 0..HEIGHT as usize {
             for j in 0..WIDTH as usize {
-                if self.chip8.gfx[i*32 + j] == true {
+                if self.chip8.gfx[i*WIDTH as usize + j] == true {
                     color = foreground;
                 } else {
                     color = background;
-                }
-                let rect = graphics::Rect::new(i as f32, j as f32, ZOOM as f32, ZOOM as f32);
-                let mesh_rect =
-                    graphics::MeshBuilder::rectangle(mesh, graphics::DrawMode::fill(), rect, color);
+                } 
+                let rect = graphics::Mesh::new_rectangle(
+                    ctx,
+                    graphics::DrawMode::fill(),
+                    graphics::Rect::new(i as f32, j as f32, ZOOM as f32, ZOOM as f32),
+                    color,
+                )?;
+                graphics::draw(ctx, &rect, graphics::DrawParam::default())?;
             }
         }
 
@@ -63,7 +65,10 @@ fn main() {
     // getting the rom path from cmd
     let path_rom = std::env::args().nth(1).expect("no rom given");
 
-    let (mut ctx, mut event_loop) = ContextBuilder::new("CHIP-8", "x").build().unwrap();
+    let (mut ctx, mut event_loop) = ContextBuilder::new("CHIP-8", "x")
+    .window_setup(ggez::conf::WindowSetup::default().title("CHIP-8"))
+    .window_mode(ggez::conf::WindowMode::default().dimensions((WIDTH*ZOOM) as f32, (HEIGHT*ZOOM) as f32))
+    .build().unwrap();
 
     let emulator = &mut Emulator::new();
     emulator.chip8.load_rom(&path_rom);
