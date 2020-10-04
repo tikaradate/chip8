@@ -7,15 +7,15 @@ pub struct Chip8 {
     reg: [usize; 16],
     pc: usize,
     I: usize,
-    delay_timer: usize,
-    sound_timer: usize,
+    pub delay_timer: usize,
+    pub sound_timer: usize,
     stack: [usize; 16],
     sp: usize,
     key: [bool; 16],
     pub gfx: [bool; 64 * 32],
     // internal flags
-    update_screen: bool,
-    check_key: bool,
+    pub update_screen: bool,
+    pub check_key: bool,
 }
 
 impl Chip8 {
