@@ -25,6 +25,8 @@ impl event::EventHandler for Emulator {
     // it will get messy
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         graphics::clear(ctx, [0.0, 0.0, 0.0, 1.0].into());
+        let mut screen_mesh = graphics::MeshBuilder::new();
+        let final_mesh;
         // bg is black and fg is white
         // maybe redundant??
         let background = graphics::BLACK;
@@ -37,16 +39,15 @@ impl event::EventHandler for Emulator {
                 } else {
                     color = background;
                 } 
-                let rect = graphics::Mesh::new_rectangle(
-                    ctx,
+                screen_mesh.rectangle(
                     graphics::DrawMode::fill(),
                     graphics::Rect::new(i as f32, j as f32, ZOOM as f32, ZOOM as f32),
                     color,
-                )?;
-                graphics::draw(ctx, &rect, graphics::DrawParam::default())?;
+                );
             }
         }
-
+        final_mesh = screen_mesh.build(ctx)?;
+        graphics::draw(ctx, &final_mesh, graphics::DrawParam::default())?;
         graphics::present(ctx)?;
         ggez::timer::yield_now();
         Ok(())
