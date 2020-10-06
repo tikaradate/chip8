@@ -1,4 +1,5 @@
 use ::ggez::*;
+use ggez::event::{KeyCode};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -67,7 +68,7 @@ impl event::EventHandler for Emulator {
     }
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
         // this equals to 250Hz
-        let milli = Duration::from_millis(4);
+        let milli = Duration::from_millis(2);
         let sixty_hz = Duration::from_millis(16);
         let now = Instant::now();
         
@@ -78,13 +79,130 @@ impl event::EventHandler for Emulator {
             self.acc_timer -= sixty_hz;
             self.chip8.delay_timer -= 1;
         }
-        //TODO: using the flags in the chip8 struct, pause until the input is received
-        if self.chip8.check_key == true {
-            panic!();
-        }
         thread::sleep(milli - now.elapsed());
         self.acc_timer += milli;
         Ok(())
+    }
+
+    fn key_down_event(
+        &mut self,
+        ctx: &mut Context,
+        keycode: KeyCode,
+        _keymods: event::KeyMods,
+        _repeat: bool
+    ) 
+    {
+        match keycode {
+            KeyCode::Key1 => {
+                self.chip8.key[0] = true;
+            }
+            KeyCode::Key2 => {
+                self.chip8.key[1] = true;
+            }
+            KeyCode::Key3 => {
+                self.chip8.key[2] = true;
+            }
+            KeyCode::Q => {
+                self.chip8.key[3] = true;
+            }
+            KeyCode::W  => {
+                self.chip8.key[4] = true;
+            }
+            KeyCode::E => {
+                self.chip8.key[5] = true;
+            }
+            KeyCode::A => {
+                self.chip8.key[6] = true;
+            }
+            KeyCode::S => {
+                self.chip8.key[7] = true;
+            }
+            KeyCode::D => {
+                self.chip8.key[8] = true;
+            }
+            KeyCode::Z => {
+                self.chip8.key[9] = true;
+            }
+            KeyCode::X => {
+                self.chip8.key[10] = true;
+            }
+            KeyCode::C => {
+                self.chip8.key[11] = true;
+            }
+            KeyCode::Key4 => {
+                self.chip8.key[12] = true;
+            }
+            KeyCode::R => {
+                self.chip8.key[13] = true;
+            }
+            KeyCode::F => {
+                self.chip8.key[14] = true;
+            }
+            KeyCode::V => {
+                self.chip8.key[15] = true;
+            }
+            KeyCode::Escape => event::quit(ctx),
+            _ => (),
+        }
+    }
+    fn key_up_event(
+        &mut self,
+        ctx: &mut Context,
+        keycode: KeyCode,
+        _keymods: event::KeyMods,
+    )
+    {
+        match keycode {
+            KeyCode::Key1 => {
+                self.chip8.key[0] = false;
+            }
+            KeyCode::Key2 => {
+                self.chip8.key[1] = false;
+            }
+            KeyCode::Key3 => {
+                self.chip8.key[2] = false;
+            }
+            KeyCode::Q => {
+                self.chip8.key[3] = false;
+            }
+            KeyCode::W  => {
+                self.chip8.key[4] = false;
+            }
+            KeyCode::E => {
+                self.chip8.key[5] = false;
+            }
+            KeyCode::A => {
+                self.chip8.key[6] = false;
+            }
+            KeyCode::S => {
+                self.chip8.key[7] = false;
+            }
+            KeyCode::D => {
+                self.chip8.key[8] = false;
+            }
+            KeyCode::Z => {
+                self.chip8.key[9] = false;
+            }
+            KeyCode::X => {
+                self.chip8.key[10] = false;
+            }
+            KeyCode::C => {
+                self.chip8.key[11] = false;
+            }
+            KeyCode::Key4 => {
+                self.chip8.key[12] = false;
+            }
+            KeyCode::R => {
+                self.chip8.key[13] = false;
+            }
+            KeyCode::F => {
+                self.chip8.key[14] = false;
+            }
+            KeyCode::V => {
+                self.chip8.key[15] = false;
+            }
+            _ => (),
+        }
     }
 }
 fn main() {

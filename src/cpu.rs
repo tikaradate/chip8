@@ -11,7 +11,7 @@ pub struct Chip8 {
     pub sound_timer: usize,
     stack: [usize; 16],
     sp: usize,
-    key: [bool; 16],
+    pub key: [bool; 16],
     pub gfx: [bool; 64 * 32],
     // internal flags
     pub update_screen: bool,
@@ -212,7 +212,7 @@ impl Chip8 {
     }
     // adds NN to VX
     fn adds_const(&mut self, vx: usize, nn: usize) {
-        self.reg[vx] += nn;
+        self.reg[vx] = (self.reg[vx] + nn) % 0x100;
     }
     // set VX to VY
     fn set_vx_vy(&mut self, vx: usize, vy: usize) {
@@ -248,7 +248,7 @@ impl Chip8 {
         } else {
             self.reg[0xF] = 0;
         }
-        self.reg[vx] = self.reg[vx] - self.reg[vy];
+        self.reg[vx] = self.reg[vx].wrapping_sub(self.reg[vy]);
     }
     // stores the least significant bit of VX in VF and
     // then shifts VX to the right by 1
@@ -265,7 +265,7 @@ impl Chip8 {
         } else {
             self.reg[0xF] = 0;
         }
-        self.reg[vx] = self.reg[vy] - self.reg[vx];
+        self.reg[vx] = self.reg[vy].wrapping_sub(self.reg[vx]);
     }
     // stores the most significant bit of VX in VF and
     // then shifts VX to the left by 1
@@ -301,15 +301,15 @@ impl Chip8 {
         let x = self.reg[vx];
         let y = self.reg[vy];
         self.reg[0xF] = 0;
-        for i in 0..n {
-            let pixel = self.memory[self.I + i];
+        for yline in 0..n {
+            let pixel = self.memory[self.I + yline];
             // iterates collumn by collumn(fixed size of 8)
-            for j in 0..8 {
-                if (pixel & (0x80 >> j)) != 0 {
-                    if self.gfx[(x + j + ((y + i) * 64))] == true {
+            for xline in 0..8 {
+                if (pixel & (0x80 >> xline)) != 0 {
+                    if self.gfx[((x + xline)%64 + ((y + yline)%32 * 64))] == true {
                         self.reg[0xF] = 1;
                     }
-                    self.gfx[(x + j + ((y + i) * 64))] ^= true;
+                    self.gfx[((x + xline)%64 + ((y + yline)%32 * 64))] ^= true;
                 }
             }
         }
@@ -339,7 +339,6 @@ impl Chip8 {
                 if self.key[i] == true {
                     pressed = true;
                     self.reg[vx] = i;
-                    self.check_key = true;
                     break;
                 }
             }
