@@ -79,7 +79,7 @@ impl event::EventHandler for Emulator {
             self.acc_timer -= sixty_hz;
             self.chip8.delay_timer -= 1;
         }
-        thread::sleep(milli - now.elapsed());
+        thread::sleep(milli);
         self.acc_timer += milli;
         Ok(())
     }
@@ -94,52 +94,52 @@ impl event::EventHandler for Emulator {
     {
         match keycode {
             KeyCode::Key1 => {
-                self.chip8.key[0] = true;
-            }
-            KeyCode::Key2 => {
                 self.chip8.key[1] = true;
             }
-            KeyCode::Key3 => {
+            KeyCode::Key2 => {
                 self.chip8.key[2] = true;
             }
-            KeyCode::Q => {
+            KeyCode::Key3 => {
                 self.chip8.key[3] = true;
             }
-            KeyCode::W  => {
+            KeyCode::Key4 => {
+                self.chip8.key[0xC] = true;
+            }
+            KeyCode::Q  => {
                 self.chip8.key[4] = true;
             }
-            KeyCode::E => {
+            KeyCode::W => {
                 self.chip8.key[5] = true;
             }
-            KeyCode::A => {
+            KeyCode::E => {
                 self.chip8.key[6] = true;
             }
-            KeyCode::S => {
+            KeyCode::R => {
+                self.chip8.key[0xD] = true;
+            }
+            KeyCode::A => {
                 self.chip8.key[7] = true;
             }
-            KeyCode::D => {
+            KeyCode::S => {
                 self.chip8.key[8] = true;
             }
-            KeyCode::Z => {
+            KeyCode::D => {
                 self.chip8.key[9] = true;
             }
+            KeyCode::F => {
+                self.chip8.key[0xE] = true;
+            }
+            KeyCode::Z => {
+                self.chip8.key[0xA] = true;
+            }
             KeyCode::X => {
-                self.chip8.key[10] = true;
+                self.chip8.key[0] = true;
             }
             KeyCode::C => {
-                self.chip8.key[11] = true;
-            }
-            KeyCode::Key4 => {
-                self.chip8.key[12] = true;
-            }
-            KeyCode::R => {
-                self.chip8.key[13] = true;
-            }
-            KeyCode::F => {
-                self.chip8.key[14] = true;
+                self.chip8.key[0xB] = true;
             }
             KeyCode::V => {
-                self.chip8.key[15] = true;
+                self.chip8.key[0xF] = true;
             }
             KeyCode::Escape => event::quit(ctx),
             _ => (),
@@ -147,59 +147,59 @@ impl event::EventHandler for Emulator {
     }
     fn key_up_event(
         &mut self,
-        ctx: &mut Context,
+        _ctx: &mut Context,
         keycode: KeyCode,
         _keymods: event::KeyMods,
     )
     {
         match keycode {
             KeyCode::Key1 => {
-                self.chip8.key[0] = false;
-            }
-            KeyCode::Key2 => {
                 self.chip8.key[1] = false;
             }
-            KeyCode::Key3 => {
+            KeyCode::Key2 => {
                 self.chip8.key[2] = false;
             }
-            KeyCode::Q => {
+            KeyCode::Key3 => {
                 self.chip8.key[3] = false;
             }
-            KeyCode::W  => {
+            KeyCode::Key4 => {
+                self.chip8.key[0xC] = false;
+            }
+            KeyCode::Q => {
                 self.chip8.key[4] = false;
             }
-            KeyCode::E => {
+            KeyCode::W => {
                 self.chip8.key[5] = false;
             }
-            KeyCode::A => {
+            KeyCode::E => {
                 self.chip8.key[6] = false;
             }
-            KeyCode::S => {
+            KeyCode::R => {
+                self.chip8.key[0xD] = false;
+            }
+            KeyCode::A => {
                 self.chip8.key[7] = false;
             }
-            KeyCode::D => {
+            KeyCode::S => {
                 self.chip8.key[8] = false;
             }
-            KeyCode::Z => {
+            KeyCode::D => {
                 self.chip8.key[9] = false;
             }
+            KeyCode::F => {
+                self.chip8.key[0xE] = false;
+            }
+            KeyCode::Z => {
+                self.chip8.key[0xA] = false;
+            }
             KeyCode::X => {
-                self.chip8.key[10] = false;
+                self.chip8.key[0] = false;
             }
             KeyCode::C => {
-                self.chip8.key[11] = false;
-            }
-            KeyCode::Key4 => {
-                self.chip8.key[12] = false;
-            }
-            KeyCode::R => {
-                self.chip8.key[13] = false;
-            }
-            KeyCode::F => {
-                self.chip8.key[14] = false;
+                self.chip8.key[0xB] = false;
             }
             KeyCode::V => {
-                self.chip8.key[15] = false;
+                self.chip8.key[0xF] = false;
             }
             _ => (),
         }

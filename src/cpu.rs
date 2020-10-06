@@ -6,7 +6,7 @@ pub struct Chip8 {
     memory: [usize; 4096],
     reg: [usize; 16],
     pc: usize,
-    I: usize,
+    index: usize,
     pub delay_timer: usize,
     pub sound_timer: usize,
     stack: [usize; 16],
@@ -61,7 +61,7 @@ impl Chip8 {
             memory,
             reg: [0; 16],
             pc: Chip8::START_ADDR,
-            I: 0,
+            index: 0,
             delay_timer: 0,
             sound_timer: 0,
             stack: [0; 16],
@@ -116,7 +116,7 @@ impl Chip8 {
     // decodes the opcode and calls the correct function
     pub fn decode_opcode(&mut self) {
         let opcode = self.opcode;
-        println!("opcode: {:x}", opcode);
+        //println!("opcode: {:x}", opcode);
         let cod1 = (opcode & 0xF000) >> 12;
         let cod2 = (opcode & 0x0F00) >> 8;
         let cod3 = (opcode & 0x00F0) >> 4;
@@ -283,7 +283,7 @@ impl Chip8 {
     }
     // set I to the adress NNN
     fn set_i(&mut self, nnn: usize) {
-        self.I = nnn;
+        self.index = nnn;
     }
     // sets pc to V0 + NNN
     fn jump_v0(&mut self, nnn: usize) {
@@ -302,7 +302,7 @@ impl Chip8 {
         let y = self.reg[vy];
         self.reg[0xF] = 0;
         for yline in 0..n {
-            let pixel = self.memory[self.I + yline];
+            let pixel = self.memory[self.index + yline];
             // iterates collumn by collumn(fixed size of 8)
             for xline in 0..8 {
                 if (pixel & (0x80 >> xline)) != 0 {
@@ -354,29 +354,29 @@ impl Chip8 {
     }
     // sets I to VX added to I
     fn add_i_vx(&mut self, vx: usize) {
-        self.I += self.reg[vx];
+        self.index += self.reg[vx];
     }
     // sets I to the spr_addr added to VX
     fn set_i_sprite(&mut self, vx: usize) {
-        self.I = Chip8::FONT_ADDR + self.reg[vx] * 5;
+        self.index = Chip8::FONT_ADDR + self.reg[vx] * 5;
     }
     // gets the BCD of VX and sets I to the hundreds place,
     // I + 1 to the tens, and I + 2 to the ones
     fn set_bcd(&mut self, vx: usize) {
-        self.memory[self.I] = vx / 100;
-        self.memory[self.I + 1] = (vx % 100) / 10;
-        self.memory[self.I + 2] = vx % 10;
+        self.memory[self.index] = vx / 100;
+        self.memory[self.index + 1] = (vx % 100) / 10;
+        self.memory[self.index + 2] = vx % 10;
     }
     // store the value from all registers starting at the address I
     fn store_regs_mem(&mut self, vx: usize) {
         for i in 0..vx + 1 {
-            self.memory[self.I + i] = self.reg[i];
+            self.memory[self.index + i] = self.reg[i];
         }
     }
     // loads values in all registers starting at the address I
     fn load_regs_mem(&mut self, vx: usize) {
         for i in 0..vx + 1 {
-            self.reg[i] = self.memory[self.I + i];
+            self.reg[i] = self.memory[self.index + i];
         }
     }
 }
