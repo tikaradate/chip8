@@ -20,7 +20,7 @@ pub struct Chip8 {
 
 impl Chip8 {
     // fonts are loaded starting at this address
-    const FONT_ADDR: usize = 0x50;
+    const FONT_ADDR: usize = 0x050;
     // the pc starts at this address
     const START_ADDR: usize = 0x200;
     // the size of a opcode, used in some contexts
@@ -298,15 +298,18 @@ impl Chip8 {
     // the data starting at I
     fn draw(&mut self, vx: usize, vy: usize, n: usize) {
         // iterates over the height/rows
+        let x = self.reg[vx];
+        let y = self.reg[vy];
+        self.reg[0xF] = 0;
         for i in 0..n {
             let pixel = self.memory[self.I + i];
             // iterates collumn by collumn(fixed size of 8)
             for j in 0..8 {
-                if (pixel & (0x8 >> j)) != 0 {
-                    if self.gfx[(vx + j + ((vy + i) * 64))] == true {
+                if (pixel & (0x80 >> j)) != 0 {
+                    if self.gfx[(x + j + ((y + i) * 64))] == true {
                         self.reg[0xF] = 1;
                     }
-                    self.gfx[(vx + j + ((vy + i) * 64))] ^= true;
+                    self.gfx[(x + j + ((y + i) * 64))] ^= true;
                 }
             }
         }

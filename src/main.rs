@@ -5,9 +5,9 @@ use std::time::{Duration, Instant};
 mod cpu;
 mod input;
 
-const ZOOM: usize = 10;
-const HEIGHT: usize = 64;
-const WIDTH: usize = 32;
+const ZOOM: usize = 20;
+const HEIGHT: usize = 32;
+const WIDTH: usize = 64;
 
 struct Emulator {
     chip8: cpu::Chip8,
@@ -28,7 +28,7 @@ impl event::EventHandler for Emulator {
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         // only draws if it has been asked by an opcode
         if self.chip8.update_screen == true {
-            graphics::clear(ctx, [0.0, 0.0, 0.0, 1.0].into());
+            //graphics::clear(ctx, [0.0, 0.0, 0.0, 1.0].into());
             let mut screen_mesh = graphics::MeshBuilder::new();
             let final_mesh;
             // bg is black and fg is white
@@ -47,19 +47,18 @@ impl event::EventHandler for Emulator {
                     screen_mesh.rectangle(
                         graphics::DrawMode::fill(),
                         graphics::Rect::new(
-                            (i * ZOOM) as f32,
                             (j * ZOOM) as f32,
+                            (i * ZOOM) as f32,
                             ZOOM as f32,
                             ZOOM as f32,
                         ),
                         color,
                     );
                 }
-            }
+            }       
             final_mesh = screen_mesh.build(ctx)?;
             graphics::draw(ctx, &final_mesh, graphics::DrawParam::default())?;
             graphics::present(ctx)?;
-            ggez::timer::yield_now();
             self.chip8.update_screen = false;
             Ok(())
         } else {
@@ -80,6 +79,9 @@ impl event::EventHandler for Emulator {
             self.chip8.delay_timer -= 1;
         }
         //TODO: using the flags in the chip8 struct, pause until the input is received
+        if self.chip8.check_key == true {
+            panic!();
+        }
         thread::sleep(milli - now.elapsed());
         self.acc_timer += milli;
         Ok(())
@@ -93,7 +95,7 @@ fn main() {
         .window_setup(ggez::conf::WindowSetup::default().title("CHIP-8"))
         .window_mode(
             ggez::conf::WindowMode::default()
-                .dimensions((HEIGHT * ZOOM) as f32, (WIDTH * ZOOM) as f32),
+                .dimensions((WIDTH * ZOOM) as f32, (HEIGHT * ZOOM) as f32),
         )
         .build()
         .unwrap();
