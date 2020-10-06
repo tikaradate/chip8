@@ -4,7 +4,6 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 mod cpu;
-mod input;
 
 const ZOOM: usize = 20;
 const HEIGHT: usize = 32;

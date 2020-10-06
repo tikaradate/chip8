@@ -270,9 +270,9 @@ impl Chip8 {
     // stores the most significant bit of VX in VF and
     // then shifts VX to the left by 1
     fn shift_l1(&mut self, vx: usize) {
-        // bitmask to get the most sig. bit
+        // uses a bitmask to get the most sig. bit
         // then pushing it to the end
-        self.reg[0xF] = (self.reg[vx] & 0x8) >> 7;
+        self.reg[0xF] = (self.reg[vx] & 0x80) >> 7;
         self.reg[vx] = self.reg[vx] << 1;
     }
     // if VX is not equal to VY, skip the next instruction
@@ -363,9 +363,9 @@ impl Chip8 {
     // gets the BCD of VX and sets I to the hundreds place,
     // I + 1 to the tens, and I + 2 to the ones
     fn set_bcd(&mut self, vx: usize) {
-        self.memory[self.index] = vx / 100;
-        self.memory[self.index + 1] = (vx % 100) / 10;
-        self.memory[self.index + 2] = vx % 10;
+        self.memory[self.index] = self.reg[vx] / 100;
+        self.memory[self.index + 1] = (self.reg[vx] % 100) / 10;
+        self.memory[self.index + 2] = self.reg[vx] % 10;
     }
     // store the value from all registers starting at the address I
     fn store_regs_mem(&mut self, vx: usize) {
