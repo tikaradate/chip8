@@ -5,9 +5,12 @@ use std::time::{Duration, Instant};
 
 mod cpu;
 
+// the chip-8 has a screen of 64x32, which is quite small
+// for modern screens, so a ZOOM is applied
 const ZOOM: usize = 20;
 const HEIGHT: usize = 32;
 const WIDTH: usize = 64;
+
 
 struct Emulator {
     chip8: cpu::Chip8,
@@ -32,7 +35,6 @@ impl event::EventHandler for Emulator {
             let mut screen_mesh = graphics::MeshBuilder::new();
             let final_mesh;
             // bg is black and fg is white
-            // maybe redundant??
             let background = graphics::BLACK;
             let foreground = graphics::WHITE;
             let mut color;
@@ -56,7 +58,9 @@ impl event::EventHandler for Emulator {
                     );
                 }
             }       
+            // builds the final mesh
             final_mesh = screen_mesh.build(ctx)?;
+            // draws it to the screen
             graphics::draw(ctx, &final_mesh, graphics::DrawParam::default())?;
             graphics::present(ctx)?;
             self.chip8.update_screen = false;
@@ -66,7 +70,7 @@ impl event::EventHandler for Emulator {
         }
     }
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
-        // this equals to 250Hz
+        // this equals to 500Hz, maybe change to user input in the future
         let milli = Duration::from_millis(2);
         let sixty_hz = Duration::from_millis(16);
         let now = Instant::now();
@@ -74,15 +78,20 @@ impl event::EventHandler for Emulator {
         self.chip8.get_opcode();
         self.chip8.decode_opcode();
         self.acc_timer += now.elapsed();
-        if self.acc_timer >= sixty_hz && self.chip8.delay_timer != 0 {
+        // the delay timer needs to be decreased at a rate of 60Hz
+        if self.acc_timer >= sixty_hz && self.chip8.delay_timer > 0 {
             self.acc_timer -= sixty_hz;
             self.chip8.delay_timer -= 1;
         }
-        thread::sleep(milli);
-        self.acc_timer += milli;
+        // sleeps for the necessary time - the time it took to process the opcodes
+        let real_milli = milli - now.elapsed();
+        thread::sleep(real_milli);
+        self.acc_timer += real_milli;
         Ok(())
     }
 
+    // checks if a key has been pressed
+    // maybe in a different file?
     fn key_down_event(
         &mut self,
         ctx: &mut Context,
@@ -144,6 +153,7 @@ impl event::EventHandler for Emulator {
             _ => (),
         }
     }
+    // checks if a key as been released
     fn key_up_event(
         &mut self,
         _ctx: &mut Context,
@@ -208,7 +218,8 @@ fn main() {
     // getting the rom path from cmd
     let path_rom = std::env::args().nth(1).expect("no rom given");
 
-    let (mut ctx, mut event_loop) = ContextBuilder::new("CHIP-8", "x")
+    // window configuration
+    let (mut ctx, mut event_loop) = ContextBuilder::new("CHIP-8", "Vinicius Tikara")
         .window_setup(ggez::conf::WindowSetup::default().title("CHIP-8"))
         .window_mode(
             ggez::conf::WindowMode::default()
@@ -216,7 +227,7 @@ fn main() {
         )
         .build()
         .unwrap();
-
+    // initialization of the emulator
     let emulator = &mut Emulator::new();
     emulator.chip8.load_rom(&path_rom);
     emulator.chip8.load_font();

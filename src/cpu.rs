@@ -13,9 +13,8 @@ pub struct Chip8 {
     sp: usize,
     pub key: [bool; 16],
     pub gfx: [bool; 64 * 32],
-    // internal flags
+    // internal flag
     pub update_screen: bool,
-    pub check_key: bool,
 }
 
 impl Chip8 {
@@ -69,7 +68,6 @@ impl Chip8 {
             key: [false; 16],
             gfx: [false; 64 * 32],
             update_screen: false,
-            check_key: false,
         }
     }
     // loads the font starting from a defined offset
@@ -83,34 +81,14 @@ impl Chip8 {
         let rom = fs::read(path).expect("Unable to read file");
 
         for i in 0..rom.len() {
-            //println!("i + Chip8:START_ADDR:{},rom[{}]:{:x} ",i + Chip8::START_ADDR, i, rom[i] as usize);
             self.memory[i + Chip8::START_ADDR] = rom[i].into();
         }
     }
-    /*
-    pub fn load_rom(&mut self, path: &str) {
-        let path = Path::new(path);
-        let mut file = File::open(&path).expect("File open failed");
-        let mut buf = Vec::new();
-
-        file.read_to_end(&mut buf).expect("Failed to read file");
-
-        if buf.len() >= 3585 {
-            panic!("ROM is too large, size: {}", buf.len());
-        }
-
-        let buf_len = buf.len();
-        for i in 0..buf_len {
-            self.memory[i + 512] = buf[i].into();
-        }
-    }
-    */
 
     // reads the opcode pointed by PC
     pub fn get_opcode(&mut self) {
         let high = self.memory[self.pc];
         let low = self.memory[self.pc + 1];
-        //println!("memory[{}]: {}", self.pc, self.memory[self.pc] );
         self.opcode = ((high) << 8) | low;
     }
     // decodes the opcode and calls the correct function
@@ -168,68 +146,82 @@ impl Chip8 {
             self.pc += Chip8::OPCODE_SIZE;
         }
     }
-
+    // 00E0
+    // set the screen to black
     fn clear_scr(&mut self) {
         self.gfx = [false; 64 * 32];
         self.update_screen = true;
     }
-
+    // 00EE
+    // return from function
     fn ret_from_sub(&mut self) {
         self.sp -= 1;
         self.pc = self.stack[self.sp];
     }
+    // 1NNN
     // unconditional jump
     fn goto(&mut self, nnn: usize) {
         self.pc = nnn;
     }
+    // 2NNN
     // function calling
     fn call(&mut self, nnn: usize) {
         self.stack[self.sp] = self.pc;
         self.sp += 1;
         self.pc = nnn;
     }
+    // 3XNN
     // if VX is equal to NN, skip the next instruction
     fn ieq_const(&mut self, vx: usize, nn: usize) {
         if self.reg[vx] == nn {
             self.pc += Chip8::OPCODE_SIZE;
         }
     }
+    // 4XNN
     // if VX isn't equal to NN, skip the next instruction
     fn neq_const(&mut self, vx: usize, nn: usize) {
         if self.reg[vx] != nn {
             self.pc += Chip8::OPCODE_SIZE;
         }
     }
+    // 5XY0
     // if VX is equal to VY, skip the next instruction
     fn ieq(&mut self, vx: usize, vy: usize) {
         if self.reg[vx] == self.reg[vy] {
             self.pc += Chip8::OPCODE_SIZE;
         }
     }
+    // 6XNN
     // set VX to NN
     fn set_vx_const(&mut self, vx: usize, nn: usize) {
         self.reg[vx] = nn;
     }
+    // 7XNN
     // adds NN to VX
     fn adds_const(&mut self, vx: usize, nn: usize) {
         self.reg[vx] = (self.reg[vx] + nn) % 0x100;
     }
+    // 8XY0
     // set VX to VY
     fn set_vx_vy(&mut self, vx: usize, vy: usize) {
         self.reg[vx] = self.reg[vy];
     }
+    // 8XY1
     // set VX to VX bitswise-OR VY
     fn set_or_vx_vy(&mut self, vx: usize, vy: usize) {
         self.reg[vx] = self.reg[vx] | self.reg[vy];
     }
+    // 8XY2
     // set VX to VX bitswise-AND VY
     fn set_and_vx_vy(&mut self, vx: usize, vy: usize) {
         self.reg[vx] = self.reg[vx] & self.reg[vy];
     }
+    // 8XY3
     // set VX to VX bitswise-XOR VY
     fn set_xor_vx_vy(&mut self, vx: usize, vy: usize) {
         self.reg[vx] = self.reg[vx] ^ self.reg[vy];
     }
+    // 8XY4
     // set VX to VX added to VY and,
     // if needed, setting VF to the carry flag
     fn adds_vx_vy(&mut self, vx: usize, vy: usize) {
@@ -240,6 +232,7 @@ impl Chip8 {
         }
         self.reg[vx] = (self.reg[vx] + self.reg[vy]) % 0x100;
     }
+    // 8XY5
     // set VX to VY subtracted from VX and, if needed,
     // setting VF to the borrow flag
     fn subs_vx_vy(&mut self, vx: usize, vy: usize) {
@@ -250,6 +243,7 @@ impl Chip8 {
         }
         self.reg[vx] = self.reg[vx].wrapping_sub(self.reg[vy]);
     }
+    // 8XY6
     // stores the least significant bit of VX in VF and
     // then shifts VX to the right by 1
     fn shift_r1(&mut self, vx: usize) {
@@ -257,6 +251,7 @@ impl Chip8 {
         self.reg[0xF] = self.reg[vx] & 0x1;
         self.reg[vx] = self.reg[vx] >> 1;
     }
+    // 8XY7
     // set VX to VX subtracted from VY and, if needed,
     // setting VF to the borrow flag
     fn subs_vy_vx(&mut self, vx: usize, vy: usize) {
@@ -267,6 +262,7 @@ impl Chip8 {
         }
         self.reg[vx] = self.reg[vy].wrapping_sub(self.reg[vx]);
     }
+    // 8XYE
     // stores the most significant bit of VX in VF and
     // then shifts VX to the left by 1
     fn shift_l1(&mut self, vx: usize) {
@@ -275,25 +271,30 @@ impl Chip8 {
         self.reg[0xF] = (self.reg[vx] & 0x80) >> 7;
         self.reg[vx] = self.reg[vx] << 1;
     }
+    // 9XY0
     // if VX is not equal to VY, skip the next instruction
     fn neq(&mut self, vx: usize, vy: usize) {
         if self.reg[vx] != self.reg[vy] {
             self.pc += Chip8::OPCODE_SIZE;
         }
     }
+    // ANNN
     // set I to the adress NNN
     fn set_i(&mut self, nnn: usize) {
         self.index = nnn;
     }
+    // BNNN
     // sets pc to V0 + NNN
     fn jump_v0(&mut self, nnn: usize) {
         self.pc = self.reg[0] + nnn;
     }
+    // CXNN
     // sets VX to rand() bitwise-and NNN
     fn random(&mut self, vx: usize, nn: usize) {
         let mut rng = rand::thread_rng();
         self.reg[vx] = rng.gen_range(0x00, 0xFE) & nn;
     }
+    // DXYN
     // draw a sprite at the coordinates VX, VY, with
     // the data starting at I
     fn draw(&mut self, vx: usize, vy: usize, n: usize) {
@@ -315,22 +316,26 @@ impl Chip8 {
         }
         self.update_screen = true;
     }
+    // EX9E
     // if VX is equal to the key, skip the next instruction
     fn ieq_key(&mut self, vx: usize) {
         if self.key[self.reg[vx]] == true {
             self.pc += Chip8::OPCODE_SIZE;
         }
     }
+    // EXA1
     // if VX is not equal to the key, skip the next instruction
     fn neq_key(&mut self, vx: usize) {
         if self.key[self.reg[vx]] == false {
             self.pc += Chip8::OPCODE_SIZE;
         }
     }
+    // FX07
     // set the vx to the delay timer
     fn get_delay(&mut self, vx: usize) {
         self.reg[vx] = self.delay_timer;
     }
+    // FX0A
     // waits for a key to get pressed
     fn get_key(&mut self, vx: usize) {
         let mut pressed = false;
@@ -344,22 +349,27 @@ impl Chip8 {
             }
         }
     }
+    // FX15
     // set the delay timer to the value of VX
     fn set_delay(&mut self, vx: usize) {
         self.delay_timer = self.reg[vx];
     }
+    // FX18
     // set the sound timer to the value of VX
     fn set_sound(&mut self, vx: usize) {
         self.sound_timer = self.reg[vx];
     }
+    // FX1E
     // sets I to VX added to I
     fn add_i_vx(&mut self, vx: usize) {
         self.index += self.reg[vx];
     }
+    // FX29
     // sets I to the spr_addr added to VX
     fn set_i_sprite(&mut self, vx: usize) {
         self.index = Chip8::FONT_ADDR + self.reg[vx] * 5;
     }
+    // FX33
     // gets the BCD of VX and sets I to the hundreds place,
     // I + 1 to the tens, and I + 2 to the ones
     fn set_bcd(&mut self, vx: usize) {
@@ -367,12 +377,14 @@ impl Chip8 {
         self.memory[self.index + 1] = (self.reg[vx] % 100) / 10;
         self.memory[self.index + 2] = self.reg[vx] % 10;
     }
+    // FX55
     // store the value from all registers starting at the address I
     fn store_regs_mem(&mut self, vx: usize) {
         for i in 0..vx + 1 {
             self.memory[self.index + i] = self.reg[i];
         }
     }
+    // FX65
     // loads values in all registers starting at the address I
     fn load_regs_mem(&mut self, vx: usize) {
         for i in 0..vx + 1 {
